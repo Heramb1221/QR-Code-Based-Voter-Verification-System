@@ -1,37 +1,22 @@
 // frontend/src/components/NavBar.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     FiLogIn, FiLogOut, FiBell, FiMenu, FiX, FiHelpCircle
 } from 'react-icons/fi';
 import logo from '../assets/mainlogo.png';
+import { AuthContext } from '../context/authContext'; // Ensure correct path
 
 const NavBar = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userType, setUserType] = useState(null); // Initialize userType to null
-    const [userName, setUserName] = useState('');
+    const { isLoggedIn, userType, logout } = useContext(AuthContext); // Get state and logout from context
     const [notificationCount, setNotificationCount] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const navigate = useNavigate();
 
-    const fetchUserDataFromLocalStorage = () => {
-        const token = localStorage.getItem('token');
-        const storedUserType = localStorage.getItem('userType');
-        const userName = localStorage.getItem('userName');
-        console.log("fetchUserDataFromLocalStorage called:", { token, storedUserType, userName });
-        console.log("localStorage userType:", storedUserType);
-        setUserType(storedUserType);
-        setIsLoggedIn(!!token && !!storedUserType && !!userName);
-        setUserName(userName);
-        if (token) {
-            checkNotifications();
-        }
-    };
-
     const checkNotifications = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('token'); // Or get from context if you prefer
             if (!token) return;
 
             const response = await fetch('http://localhost:5000/api/notifications/unread', {
@@ -48,32 +33,17 @@ const NavBar = () => {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userType');
-        localStorage.removeItem('userName');
-        setIsLoggedIn(false);
-        setUserType(null);
+        logout(); // Use the logout function from the context
         navigate('/');
-        window.dispatchEvent(new Event('storage'));
     };
 
     useEffect(() => {
-        fetchUserDataFromLocalStorage();
-    }, []);
+        if (isLoggedIn) {
+            checkNotifications();
+        }
+    }, [isLoggedIn]);
 
-    useEffect(() => {
-        const handleStorageChange = () => {
-            console.log("Storage event triggered");
-            fetchUserDataFromLocalStorage();
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-        };
-    }, []);
-
-    console.log("NavBar rendered:", { isLoggedIn, userType });
+    console.log("NavBar Context:", { isLoggedIn, userType });
 
     return (
         <div className='bg-blue-600 p-2 w-full shadow-md'>
