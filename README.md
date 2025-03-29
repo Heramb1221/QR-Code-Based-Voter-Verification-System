@@ -1,1 +1,0 @@
-# QR-Code-Based-Voter-Verification-System
