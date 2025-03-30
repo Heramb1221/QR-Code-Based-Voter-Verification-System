@@ -2,41 +2,38 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const rateLimit = require("express-rate-limit");
-const User = require("../model/Admin"); // Change to your User model path
-const adminAuth = require("../middlewares/adminAuth"); // Import authentication middleware
+const User = require("../model/Admin");
+const adminAuth = require("../middlewares/adminAuth");
 require("dotenv").config();
 
 const router = express.Router();
 
-// 🔹 Rate limiter middleware (prevents brute force attacks)
+// Rate limiter
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Allow only 5 login attempts per 15 mins
+    windowMs: 15 * 60 * 1000,
+    max: 5,
     message: "Too many login attempts. Try again later.",
 });
 
-// ✅ User Registration Route (for Admin or Voter)
+// ✅ Admin Registration
 router.post("/register", async (req, res) => {
     try {
-        const { name, email, password, city, telephone, role } = req.body;   // Role is included here (admin, voter, etc.)
+        const { name, email, password, city, telephone, role } = req.body;
 
-        // Check if the email already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ success: false, message: "User with this email already exists." });
+            return res.status(400).json({ success: false, message: "User already exists." });
         }
 
-        // Hash password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user with role (either admin or voter)
         const newUser = new User({
             name,
             email,
             password: hashedPassword,
             city,
             telephone,
-            role // Store role in the database (admin, voter, etc.)
+            role
         });
 
         await newUser.save();
@@ -47,81 +44,90 @@ router.post("/register", async (req, res) => {
     }
 });
 
-// ✅ User Login Route with Rate Limiting & Secure JWT Storage
+// ✅ Admin Login
 router.post("/login", loginLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // 🔹 Check if user exists
         const user = await User.findOne({ email });
+
         if (!user) {
-            console.log("❌ User not found for email:", email);
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
-        // 🔹 Compare Passwords
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            console.log("❌ Password mismatch");
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
-        // 🔹 Generate JWT Token with user role
-        if (!process.env.JWT_SECRET) {
-            console.error("❌ JWT_SECRET is not defined in .env file");
-            return res.status(500).json({ success: false, message: "JWT_SECRET is missing" });
-        }
-
-        // We store the user role in the JWT token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-        // 🔹 Set JWT as HTTP-only cookie
         res.cookie("token", token, {
-            httpOnly: true,   // Prevents XSS
-            secure: process.env.NODE_ENV === "production", // Only for HTTPS
-            sameSite: "Strict", // Prevent CSRF attacks
-            maxAge: 3600000, // 1 hour
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 3600000,
         });
 
-        console.log("✅ Login successful for:", email);
-
-        // Send the user role and other details in the response
         return res.status(200).json({
             success: true,
             message: "Login successful",
-            token: token, // ✅ Include the token in the response
-            role: user.role, // Send the role back in the response (admin, voter, etc.)
+            token,
+            role: user.role,
             user: {
                 id: user._id,
                 email: user.email,
                 name: user.name,
                 city: user.city,
                 telephone: user.telephone,
-                role: user.role // Include the role in the response
+                role: user.role
             }
         });
 
     } catch (error) {
-        console.error("❌ Server error:", error);
         return res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 });
 
-// ✅ User Logout Route (Clears JWT Token)
+// ✅ Logout
 router.post("/logout", (req, res) => {
-    res.clearCookie("token"); // Remove JWT from cookies
+    res.clearCookie("token");
     res.status(200).json({ success: true, message: "Logged out successfully" });
 });
 
-// ✅ Protected User Dashboard Route
-router.get("/user-dashboard", adminAuth, (req, res) => {
-    // The req.user object contains the authenticated user (can be admin, voter, etc.)
-    res.json({
-        success: true,
-        message: `Welcome ${req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1)}!`, // Display role dynamically
-        user: req.user,   // Send back the full user data
-        role: req.user.role,   // Include the role (admin, voter, etc.)
-    });
+// ✅ Admin Stats
+router.get("/stats", adminAuth, async (req, res) => {
+    try {
+        const usersCount = await User.countDocuments();
+        const testimonialsCount = 10; // Replace with actual testimonial count logic
+        const feedbacksCount = 5; // Replace with actual feedback count logic
+
+        res.json({
+            users: usersCount,
+            testimonials: testimonialsCount,
+            feedbacks: feedbacksCount
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching stats", error: error.message });
+    }
+});
+
+// ✅ Admin Profile
+router.get("/profile", adminAuth, async (req, res) => {
+    try {
+        const admin = await User.findById(req.user.id).select("-password");
+        if (!admin) {
+            return res.status(404).json({ success: false, message: "Admin not found" });
+        }
+
+        res.json({
+            name: admin.name,
+            id: admin._id,
+            phone: admin.telephone,
+            location: admin.city
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching profile", error: error.message });
+    }
 });
 
 module.exports = router;

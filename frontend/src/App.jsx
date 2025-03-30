@@ -9,6 +9,10 @@ import CreateUser from './pages/CreateUser';
 import VoterLogin from './components/VoterLogin';
 import VoterDashboard from './pages/VoterDashboard';
 import VoterProfile from './pages/VoterProfile';
+import Home from './pages/Home';
+import FindOfficerPage from './components/FindOfficer';
+import AboutUs from './components/AboutUs';
+import Footer from './components/Footer';
 
 function App() {
     return (
@@ -24,10 +28,12 @@ function App() {
                         <Route path="/voter-dashboard" element={<VoterDashboard />} />
                         <Route path="/voter-profile" element={<VoterProfile />} />
                         {/* Add any other routes here */}
-                        <Route path="/" element={<div className="p-8 text-center">Welcome to QRVotify</div>} />
-                        <Route path="/about-us" element={<div className="p-8 text-center">About QRVotify</div>} />
+                        <Route path="/" element={<Home/>} />
+                        <Route path="/find-officers" element={<FindOfficerPage/>} />
+                        <Route path="/about-us" element={<AboutUs />}/>
                         <Route path="/notifications" element={<div className="p-8 text-center">Notifications</div>} />
                     </Routes>
+                    <Footer />
                 </VoterAuthProvider>
             </AuthProvider>
         </Router>
