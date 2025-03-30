@@ -7,40 +7,58 @@ export const AuthProvider = ({ children }) => {
     const [userType, setUserType] = useState(null);
     const [token, setToken] = useState(null);
     const [userName, setUserName] = useState(null);
-    const [loading, setLoading] = useState(true); // Add loading state
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
         const storedUserType = localStorage.getItem('userType');
         const storedUserName = localStorage.getItem('userName');
 
-        if (storedToken && storedUserType && storedUserName) {
+        // Only restore admin state if userType is explicitly 'admin'
+        if (storedToken && storedUserType === 'admin' && storedUserName) {
+            console.log("Admin auth: Restoring login state from localStorage");
             setToken(storedToken);
             setUserType(storedUserType);
             setUserName(storedUserName);
             setIsLoggedIn(true);
+        } else {
+            console.log("Admin auth: No valid admin session found in localStorage");
         }
-        setLoading(false); // Set loading to false after checking localStorage
+        setLoading(false);
     }, []);
 
     const login = (data) => {
+        console.log("Admin auth: Login called with data:", data);
+        
+        // Validate data
+        if (!data || !data.token) {
+            console.error("Admin auth: Invalid login data");
+            return;
+        }
+        
         localStorage.setItem('token', data.token);
-        localStorage.setItem('userType', data.role);
-        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userType', 'admin');
+        localStorage.setItem('userName', data.user?.name || '');
+        
         setToken(data.token);
-        setUserType(data.role);
-        setUserName(data.user.name);
+        setUserType('admin');
+        setUserName(data.user?.name || '');
         setIsLoggedIn(true);
+        
+        console.log("Admin auth: Login completed successfully");
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userType');
-        localStorage.removeItem('userName');
+        console.log("Admin auth: Logout called");
+        
+        // We only clear admin-specific state here
+        // The NavBar component will handle clearing localStorage
         setToken(null);
         setUserType(null);
         setUserName(null);
         setIsLoggedIn(false);
+        
+        console.log("Admin auth: Logout completed");
     };
 
     const value = {
@@ -55,8 +73,8 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children} {/* Only render children after checking localStorage */}
-            {loading && <div>Loading...</div>} {/* Optional loading indicator */}
+            {!loading && children}
+            {loading && <div>Loading...</div>}
         </AuthContext.Provider>
     );
 };
