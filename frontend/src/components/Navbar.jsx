@@ -202,7 +202,7 @@ const NavBar = () => {
                     )}
                     {isLoggedIn && userType === 'voter' && (
                         <>
-                            <NavLink to='/voter-dashboard' className="text-white hover:text-gray-300">Dashboard</NavLink>
+                            <NavLink to='/voter-profile' className="text-white hover:text-gray-300">View Card</NavLink>
                         </>
                     )}
                     {isLoggedIn && (

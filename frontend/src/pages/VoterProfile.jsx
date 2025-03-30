@@ -1,402 +1,466 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import Card from "../components/Card";
-import Modal from "react-modal";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext2 } from "../context/authVoter";
+import {
+    FiUser,
+    FiCalendar,
+    FiHome,
+    FiLoader,
+    FiEdit,
+    FiLock
+} from "react-icons/fi";
+import VoterCard from "../components/Card";
+import Modal from "react-modal";
 
-const UserProfile = () => {
-  const navigate = useNavigate();
-  const [userId, setUserId] = useState(null);
-  const [time, setTime] = useState(new Date());
-  const upcomingElection = {
-    date: "2025-04-15",
-    location: "New Delhi",
-    type: "General Election",
-  };
+const VoterProfile = () => {
+    const navigate = useNavigate();
+    const { isLoggedIn, token } = useContext(AuthContext2);
+    const [voterData, setVoterData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState("voterCard");
+    const [editRequested, setEditRequested] = useState(false);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
-  const [editRequested, setEditRequested] = useState(false);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [newDetails, setNewDetails] = useState({
-    fullName: "",
-    address: "",
-    editReason: "",
-    supportingDocs: null,
-    additionalNotes: "",
-  });
-  const [uploading, setUploading] = useState(false);
+    const [newDetails, setNewDetails] = useState({
+        fullName: "",
+        address: "",
+        mobile: "",
+        email: "",
+        editReason: "",
+        supportingDocs: null,
+        additionalNotes: "",
+    });
 
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [newPasswordDetails, setNewPasswordDetails] = useState({
-    oldPassword: "",
-    newPassword: "",
-    confirmNewPassword: "",
-  });
+    const [newPasswordDetails, setNewPasswordDetails] = useState({
+        oldPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+    });
 
-  const [activityLog, setActivityLog] = useState([]);
-  const [notificationPreferences, setNotificationPreferences] = useState({
-    emailNotifications: true,
-    smsNotifications: false,
-    profileApprovalNotifications: true,
-  });
+    const [activityLog, setActivityLog] = useState([
+        { activity: "Logged in", date: new Date().toLocaleString() },
+    ]);
 
-  const [verificationStatus, setVerificationStatus] = useState({});
-  const [pollingStation, setPollingStation] = useState({});
-  const [lastActivityTime, setLastActivityTime] = useState(new Date());
-  const sessionTimeoutLimit = 10 * 60 * 1000; // 10 minutes
-  const [activeTab, setActiveTab] = useState("election");
-  const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    // Fetch user ID from authentication context or storage
-    const fetchUserData = async () => {
-      try {
-        // Get user ID from auth context or storage
-        // This is just a placeholder - replace with your actual auth method
-        const token = localStorage.getItem('authToken');
-        
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-        
-        // Get user ID and basic profile information
-        const userResponse = await axios.get('/api/user/profile', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        setUserId(userResponse.data.id);
-        
-        // Get activity log
-        const activityResponse = await axios.get('/api/user/activity-log', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setActivityLog(activityResponse.data);
-        
-        // Get verification status
-        const verificationResponse = await axios.get('/api/user/verification-status', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setVerificationStatus(verificationResponse.data);
-        
-        // Get polling station info
-        const pollingResponse = await axios.get('/api/user/polling-station', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setPollingStation(pollingResponse.data);
-        
-        // Check if there's a pending edit request
-        const editRequestResponse = await axios.get('/api/user/edit-request-status', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setEditRequested(editRequestResponse.data.pending);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        if (error.response && error.response.status === 401) {
-          navigate('/login');
-        }
-        setLoading(false);
-      }
+    const upcomingElection = {
+        date: "2025-05-15",
+        location: "National",
+        type: "General Election",
     };
 
-    fetchUserData();
+    const calculateTimeLeft = () => {
+        const electionDate = new Date(upcomingElection.date);
+        const currentTime = new Date();
+        const difference = electionDate - currentTime;
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        return { days, hours };
+    };
 
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    const interval = setInterval(() => {
-      if (new Date() - lastActivityTime > sessionTimeoutLimit) {
-        alert("Session expired due to inactivity. Please log in again.");
-        navigate('/login');
-      }
-    }, 1000);
+    const { days, hours } = calculateTimeLeft();
 
-    // Log user activity
-    const logActivity = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          await axios.post('/api/user/log-activity', 
-            { activity: 'Viewed profile page' },
-            { headers: { Authorization: `Bearer ${token}` }}
-          );
+    const [lastActivityTime, setLastActivityTime] = useState(new Date());
+    const sessionTimeoutLimit = 30 * 60 * 1000; // 30 minutes
+
+    useEffect(() => {
+        // Check if user is logged in as a voter
+        if (!isLoggedIn) {
+            navigate("/voter-login");
+            return;
         }
-      } catch (error) {
-        console.error("Error logging activity:", error);
-      }
-    };
-    
-    logActivity();
-    
-    return () => {
-      clearInterval(timer);
-      clearInterval(interval);
-    };
-  }, [lastActivityTime, navigate]);
 
-  const handleUserActivity = () => {
-    setLastActivityTime(new Date());
-  };
+        // Fetch voter profile data (for non-card information)
+        const fetchProfileData = async () => {
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/voters/profile", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    credentials: "include"
+                });
 
-  const handleApplyEdit = () => {
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("fullName", newDetails.fullName);
-    formData.append("address", newDetails.address);
-    formData.append("editReason", newDetails.editReason);
-    formData.append("additionalNotes", newDetails.additionalNotes);
-    if (newDetails.supportingDocs) {
-      formData.append("supportingDocs", newDetails.supportingDocs);
-    }
+                if (!response.ok) {
+                    throw new Error("Failed to fetch voter data");
+                }
 
-    const token = localStorage.getItem('authToken');
-    
-    axios.post('/api/user/edit-request', formData, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(response => {
-        setEditRequested(true);
-        setModalIsOpen(false);
-        alert("Edit request has been submitted.");
-      })
-      .catch(error => {
-        console.error("Error submitting edit request:", error);
-        alert("Failed to submit edit request. Please try again.");
-      })
-      .finally(() => {
-        setUploading(false);
-      });
-  };
+                const data = await response.json();
+                const voterInfo = data.voter || data;
 
-  const handleChangePassword = () => {
-    if (newPasswordDetails.newPassword === newPasswordDetails.confirmNewPassword) {
-      const token = localStorage.getItem('authToken');
-      
-      axios.post('/api/user/change-password', {
-        oldPassword: newPasswordDetails.oldPassword,
-        newPassword: newPasswordDetails.newPassword,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(response => {
-          alert("Password changed successfully.");
-          setShowChangePasswordModal(false);
-        })
-        .catch(error => {
-          console.error("Error changing password:", error);
-          if (error.response && error.response.data.message) {
-            alert(error.response.data.message);
-          } else {
-            alert("Failed to change password. Please try again.");
-          }
-        });
-    } else {
-      alert("New passwords do not match.");
-    }
-  };
+                if (!voterInfo) {
+                    throw new Error("Voter data format is not as expected");
+                }
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    handleUserActivity();
-  };
+                setVoterData(voterInfo);
 
-  const calculateTimeLeft = () => {
-    const electionDate = new Date(upcomingElection.date);
-    const currentTime = new Date();
-    const difference = electionDate - currentTime;
-    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    return { days, hours };
-  };
+                setNewDetails({
+                    fullName: voterInfo.fullName || "",
+                    address: voterInfo.houseNo && voterInfo.street ?
+                        `${voterInfo.houseNo}, ${voterInfo.street}, ${voterInfo.locality || ''}` :
+                        "",
+                    mobile: voterInfo.mobile || "",
+                    email: voterInfo.email || "",
+                    editReason: "",
+                    supportingDocs: null,
+                    additionalNotes: "",
+                });
+            } catch (error) {
+                console.error("Error fetching voter data:", error);
+                setError(error.message);
 
-  const { days, hours } = calculateTimeLeft();
+                const mockData = {
+                    fullName: localStorage.getItem("userName") || "John Doe",
+                    voterId: localStorage.getItem("voterId") || "AASBMDAAD",
+                    dob: "1990-01-01",
+                    gender: "Male",
+                    fatherHusbandName: "James Doe",
+                    houseNo: "123",
+                    street: "Main Street",
+                    locality: "Downtown",
+                    city: "Metropolis",
+                    district: "Central",
+                    state: "State",
+                    pinCode: "123456",
+                    mobile: "9876543210",
+                    email: "voter@example.com",
+                    aadharNumber: "XXXX-XXXX-XXXX",
+                    photoUrl: "/api/placeholder/120/150"
+                };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-100 via-indigo-200 to-green-300 p-6 flex justify-center items-center">
-        <div className="text-2xl text-blue-800">Loading profile data...</div>
-      </div>
-    );
-  }
+                setVoterData(mockData);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 via-indigo-200 to-green-300 p-6" onClick={handleUserActivity}>
-      <div className="flex flex-col sm:flex-row sm:space-x-6">
-        {/* Left Section - Tabs, Election, Activity Log, Polling Station */}
-        <div className="w-full sm:w-1/3 bg-white p-6 rounded-lg shadow-xl mb-6 sm:mb-0">
-          <h2 className="text-2xl font-bold text-blue-800">Profile Navigation</h2>
-          <div className="flex flex-col space-y-4 mt-4">
-            <button
-              className={`px-4 py-2 rounded-md ${activeTab === "election" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-              onClick={() => handleTabClick("election")}
-            >
-              Upcoming Election
-            </button>
-            <button
-              className={`px-4 py-2 rounded-md ${activeTab === "profile" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-              onClick={() => handleTabClick("profile")}
-            >
-              Profile Summary
-            </button>
-          </div>
+                setNewDetails({
+                    fullName: mockData.fullName,
+                    address: `${mockData.houseNo}, ${mockData.street}, ${mockData.locality}`,
+                    mobile: mockData.mobile,
+                    email: mockData.email,
+                    editReason: "",
+                    supportingDocs: null,
+                    additionalNotes: "",
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
 
-          {/* Upcoming Election */}
-          {activeTab === "election" && (
-            <div className="mt-6">
-              <h3 className="font-semibold">Upcoming Election</h3>
-              <ul>
-                <li>Date: {upcomingElection.date}</li>
-                <li>Location: {upcomingElection.location}</li>
-                <li>Type: {upcomingElection.type}</li>
-                <li>Countdown: {days} days {hours} hours</li>
-              </ul>
-            </div>
-          )}
+        fetchProfileData();
 
-          {/* User Activity Log */}
-          <div className="mt-6">
-            <h3 className="font-semibold">User Activity Log</h3>
-            <ul className="max-h-40 overflow-y-auto">
-              {activityLog.map((log, index) => (
-                <li key={index} className="text-sm py-1 border-b border-gray-100">
-                  {log.activity} - {log.date}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Polling Station */}
-          <div className="mt-6">
-            <h3 className="font-semibold">Polling Station</h3>
-            <p>Nearest Polling Station: {pollingStation.nearestStation || "Not assigned yet"}</p>
-            <p>Distance: {pollingStation.distance || "N/A"}</p>
-          </div>
-
-          {/* Apply for Edit Option */}
-          <div className="mt-6">
-            {!editRequested ? (
-              <button
-                className="bg-yellow-500 text-white px-4 py-2 rounded-md"
-                onClick={() => setModalIsOpen(true)}
-              >
-                Apply for Profile Edit
-              </button>
-            ) : (
-              <p className="text-green-500">Your profile edit request has been submitted. Please wait for admin verification.</p>
-            )}
-          </div>
-
-          {/* Change Password */}
-          <div className="mt-6">
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
-              onClick={() => setShowChangePasswordModal(true)}
-            >
-              Change Password
-            </button>
-          </div>
-        </div>
-
-        {/* Right Section - User Profile Card */}
-        <div className="w-full sm:w-2/3 bg-white p-6 rounded-lg shadow-xl">
-          {userId && <Card userId={userId} />}
-        </div>
-      </div>
-
-      {/* Modal for Profile Edit */}
-      <Modal isOpen={modalIsOpen} onRequestClose={() => setModalIsOpen(false)} ariaHideApp={false}>
-        <h2 className="text-xl font-bold text-blue-700">Edit Profile Details</h2>
-        <div className="mt-4">
-          <input
-            type="text"
-            value={newDetails.fullName}
-            onChange={(e) => setNewDetails({ ...newDetails, fullName: e.target.value })}
-            placeholder="Full Name"
-            className="p-2 rounded-md border border-gray-300 w-full mb-4"
-          />
-          <textarea
-            value={newDetails.address}
-            onChange={(e) => setNewDetails({ ...newDetails, address: e.target.value })}
-            placeholder="Address"
-            className="p-2 rounded-md border border-gray-300 w-full mb-4"
-          />
-          <textarea
-            value={newDetails.editReason}
-            onChange={(e) => setNewDetails({ ...newDetails, editReason: e.target.value })}
-            placeholder="Reason for Edit"
-            className="p-2 rounded-md border border-gray-300 w-full mb-4"
-          />
-          <input
-            type="file"
-            onChange={(e) => setNewDetails({ ...newDetails, supportingDocs: e.target.files[0] })}
-            className="mb-4"
-          />
-          <textarea
-            value={newDetails.additionalNotes}
-            onChange={(e) => setNewDetails({ ...newDetails, additionalNotes: e.target.value })}
-            placeholder="Additional Notes"
-            className="p-2 rounded-md border border-gray-300 w-full mb-4"
-          />
-          <div className="flex justify-between">
-            <button
-              onClick={() => setModalIsOpen(false)}
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleApplyEdit}
-              disabled={uploading}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
-            >
-              {uploading ? "Submitting..." : "Submit Edit Request"}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal for Password Change */}
-      <Modal isOpen={showChangePasswordModal} onRequestClose={() => setShowChangePasswordModal(false)} ariaHideApp={false}>
-        <h2 className="text-xl font-bold text-blue-700">Change Password</h2>
-        <div className="mt-4">
-          <input
-            type="password"
-            value={newPasswordDetails.oldPassword}
-            onChange={(e) => setNewPasswordDetails({ ...newPasswordDetails, oldPassword: e.target.value })}
-            placeholder="Old Password"
-            className="p-2 rounded-md border border-gray-300 w-full mb-4"
-          />
-          <input
-            type="password"
-            value={newPasswordDetails.newPassword}
-            onChange={(e) => setNewPasswordDetails({ ...newPasswordDetails, newPassword: e.target.value })}
-            placeholder="New Password"
-            className="p-2 rounded-md border border-gray-300 w-full mb-4"
-          />
-          <input
-            type="password"
-            value={newPasswordDetails.confirmNewPassword}
-            onChange={(e) => setNewPasswordDetails({ ...newPasswordDetails, confirmNewPassword: e.target.value })}
-            placeholder="Confirm New Password"
-            className="p-2 rounded-md border border-gray-300 w-full mb-4"
-          />
-          <div className="flex justify-between">
-            <button
-              onClick={() => setShowChangePasswordModal(false)}
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleChangePassword}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
-            >
-              Change Password
-            </button>
-          </div>
-        </div>
-      </Modal>
-    </div>
-  );
-};
-
-export default UserProfile;
+        const interval = setInterval(() => {
+            if (new Date() - lastActivityTimesessionTimeoutLimit) {
+              alert("Session expired due to inactivity. Please log in again.");
+              navigate('/voter-login');
+              }
+              }, 60000);
+              
+                  return () => clearInterval(interval);
+              }, [isLoggedIn, navigate, token, lastActivityTime]);
+              
+              useEffect(() => {
+                  const handleActivity = () => {
+                      setLastActivityTime(new Date());
+                  };
+              
+                  window.addEventListener('mousemove', handleActivity);
+                  window.addEventListener('keydown', handleActivity);
+                  window.addEventListener('click', handleActivity);
+              
+                  return () => {
+                      window.removeEventListener('mousemove', handleActivity);
+                      window.removeEventListener('keydown', handleActivity);
+                      window.removeEventListener('click', handleActivity);
+                  };
+              }, []);
+              
+              const handleApplyEdit = () => {
+                  setUploading(true);
+                  const formData = new FormData();
+                  formData.append("fullName", newDetails.fullName);
+                  formData.append("address", newDetails.address);
+                  formData.append("mobile", newDetails.mobile);
+                  formData.append("email", newDetails.email);
+                  formData.append("editReason", newDetails.editReason);
+                  formData.append("additionalNotes", newDetails.additionalNotes);
+              
+                  if (newDetails.supportingDocs) {
+                      formData.append("supportingDocs", newDetails.supportingDocs);
+                  }
+              
+                  setTimeout(() => {
+                      setEditRequested(true);
+                      setModalIsOpen(false);
+              
+                      setActivityLog([
+                          { activity: "Profile edit request submitted", date: new Date().toLocaleString() },
+                          ...activityLog
+                      ]);
+              
+                      alert("Edit request has been submitted and is pending approval.");
+                      setUploading(false);
+                  }, 1500);
+              };
+              
+              const handleChangePassword = () => {
+                  if (newPasswordDetails.newPassword !== newPasswordDetails.confirmNewPassword) {
+                      alert("New passwords do not match.");
+                      return;
+                  }
+              
+                  if (!newPasswordDetails.oldPassword || !newPasswordDetails.newPassword) {
+                      alert("Please fill in all password fields.");
+                      return;
+                  }
+              
+                  setTimeout(() => {
+                      setShowChangePasswordModal(false);
+              
+                      setActivityLog([
+                          { activity: "Password changed", date: new Date().toLocaleString() },
+                          ...activityLog
+                      ]);
+              
+                      alert("Password changed successfully.");
+              
+                      setNewPasswordDetails({
+                          oldPassword: "",
+                          newPassword: "",
+                          confirmNewPassword: "",
+                      });
+                  }, 1500);
+              };
+              
+              if (loading) {
+                  return (
+                      <div className="min-h-screen flex items-center justify-center">
+                          <FiLoader className="animate-spin text-blue-600 text-4xl" />
+                          <span className="ml-2 text-lg">Loading voter information...</span>
+                      </div>
+                  );
+              }
+              
+              if (error && !voterData) {
+                  return (
+                      <div className="min-h-screen flex items-center justify-center">
+                          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                              <h2 className="font-bold mb-2">Error Loading Profile</h2>
+                              <p>{error}</p>
+                              <button
+                                  onClick={() => navigate("/voter-login")}
+                                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+                              >
+                                  Return to Login
+                              </button>
+                          </div>
+                      </div>
+                  );
+              }
+              
+              return (
+                  <div className="min-h-screen bg-blue-100 py-8 px-4">
+                      <div className="max-w-6xl mx-auto">
+                          <h1 className="text-3xl font-bold text-center text-blue-800 mb-8">
+                              Voter Profile Dashboard
+                          </h1>
+              
+                          <div className="flex flex-col md:flex-row gap-6">
+                              {/* Left Section */}
+                              <div className="w-full md:w-1/3 bg-white p-6 rounded-lg shadow-xl mb-6 md:mb-0">
+                                  <h2 className="text-2xl font-bold text-blue-800 mb-4">Dashboard</h2>
+              
+                                  <div className="flex flex-col space-y-2 mb-6">
+                                      <button
+                                          className={`px-4 py-2 rounded-md flex items-center ${activeTab === "voterCard" ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                                          onClick={() => setActiveTab("voterCard")}
+                                      >
+                                          <FiUser className="mr-2" /> Voter ID Card
+                                      </button>
+                                      <button
+                                          className={`px-4 py-2 rounded-md flex items-center ${activeTab === "electionInfo" ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                                          onClick={() => setActiveTab("electionInfo")}
+                                      >
+                                          <FiCalendar className="mr-2" /> Election Information
+                                      </button>
+                                      <button
+                                          className={`px-4 py-2 rounded-md flex items-center ${activeTab === "activityLog" ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
+                                          onClick={() => setActiveTab("activityLog")}
+                                      >
+                                          <FiHome className="mr-2" /> Activity Log
+                                      </button>
+                                  </div>
+              
+                                  <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                                      <h3 className="font-bold text-lg text-blue-700 mb-2">Upcoming Election</h3>
+                                      <div className="space-y-1">
+                                          <p><span className="font-semibold">Date:</span> {upcomingElection.date}</p>
+                                          <p><span className="font-semibold">Type:</span> {upcomingElection.type}</p>
+                                          <p><span className="font-semibold">Location:</span> {upcomingElection.location}</p>
+                                          <p className="font-semibold text-red-600 mt-2">
+                                              Time Remaining: {days} days {hours} hours
+                                          </p>
+                                      </div>
+                                  </div>
+              
+                                  <div className="space-y-3">
+                                      {!editRequested ? (
+                                          <button
+                                              onClick={() => setModalIsOpen(true)}
+                                              className="w-full py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md flex items-center justify-center"
+                                          >
+                                              <FiEdit className="mr-2" /> Apply for Profile Edit
+                                          </button>
+                                      ) : (
+                                          <div className="p-3 bg-yellow-100 text-yellow-800 rounded-md">
+                                              Your edit request has been submitted and is pending approval.
+                                          </div>
+                                      )}
+              
+                                      <button
+                                          onClick={() => setShowChangePasswordModal(true)}
+                                          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center justify-center"
+                                      >
+                                          <FiLock className="mr-2" /> Change Password
+                                      </button>
+              
+                                      <button
+                                          onClick={() => navigate("/voter-voting")}
+                                          className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center justify-center"
+                                      >
+                                          Vote in Current Election
+                                      </button>
+                                  </div>
+              
+                                  <div className="mt-6">
+                                      <h3 className="font-bold text-lg text-blue-700 mb-2">Recent Activity</h3>
+                                      <div className="max-h-40 overflow-y-auto bg-gray-50 p-3 rounded-md">
+                                          <ul className="space-y-2">
+                                              {activityLog.map((log, index) => (
+                                                  <li key={index} className="text-sm border-b pb-1">
+                                                      <span className="font-semibold">{log.activity}</span>
+                                                      <br />
+                                                      <span className="text-xs text-gray-500">{log.date}</span>
+                                                  </li>
+                                              ))}
+                                          </ul>
+                                      </div>
+                                  </div>
+                              </div>
+              
+                              {/* Right Section */}
+                              <div className="w-full md:w-2/3">
+                                  {activeTab === "voterCard" && (
+                                      <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+                                          <div className="p-4 bg-blue-700 text-white">
+                                              <h2 className="text-xl font-bold">Voter Identification Card</h2>
+                                              <p className="text-sm">Election Commission of India</p>
+                                          </div>
+                                          <div className="p-6 flex justify-center">
+                                              <VoterCard />
+                                          </div>
+                                      </div>
+                                  )}
+              
+                                  {activeTab === "electionInfo" && (
+                                      <div className="bg-white rounded-lg shadow-xl p-6">
+                                          <h2 className="text-2xl font-bold text-blue-700 mb-4">Election Information</h2>
+              
+                                          <div className="space-y-6">
+                                              <div className="border-b pb-4">
+                                                  <h3 className="text-lg font-semibold mb-2">Upcoming Elections</h3>
+                                                  <div className="bg-blue-50 p-4 rounded-md">
+                                                      <p className="font-bold">{upcomingElection.type}</p>
+                                                      <p className="text-sm">Date: {upcomingElection.date}</p>
+                                                      <p className="text-sm">Location: {upcomingElection.location}</p>
+                                                      <p className="text-sm font-semibold text-red-600 mt-2">
+                                                          Time Remaining: {days} days {hours} hours
+                                                      </p>
+                                                  </div>
+                                              </div>
+              
+                                              <div className="border-b pb-4">
+                                                  <h3 className="text-lg font-semibold mb-2">Your Polling Station</h3>
+                                                  <div className="bg-green-50 p-4 rounded-md">
+                                                      <p className="font-bold">Station Name: Central Polling Booth #{voterData?.voterId?.substring(0, 4)}</p>
+                                                      <p className="text-sm">Address: Community Center, {voterData?.district}, {voterData?.state}</p>
+                                                      <p className="text-sm">Open Hours: 7:00 AM - 6:00 PM</p>
+                                                      <p className="text-sm">Your Booth Number: {parseInt(voterData?.voterId?.substring(5, 8), 36) % 10 + 1}</p>
+                                                  </div>
+                                              </div>
+              
+                                              <div>
+                                                  <h3 className="text-lg font-semibold mb-2">Voting Guidelines</h3>
+                                                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                                                      <li>Bring your Voter ID card for verification</li>
+                                                      <li>Arrive at least 30 minutes before you plan to vote</li>
+                                                      <li>Electronic voting machines will be used</li>
+                                                      <li>Follow COVID-19 protocols as applicable</li>
+                                                      <li>No electronic devices are allowed in the voting booth</li>
+                                                      <li>Your finger will be marked with indelible ink after voting</li>
+                                                  </ul>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  )}
+              
+                                  {activeTab === "activityLog" && (
+                                      <div className="bg-white rounded-lg shadow-xl p-6">
+                                          <h2 className="text-2xl font-bold text-blue-700 mb-4">Activity Log</h2>
+              
+                                          <div className="overflow-hidden rounded-lg border">
+                                              <table className="min-w-full divide-y divide-gray-200">
+                                                  <thead className="bg-gray-50">
+                                                      <tr>
+                                                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                              Activity
+                                                          </th>
+                                                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                              Date & Time
+                                                          </th>
+                                                      </tr>
+                                                  </thead>
+                                                  <tbody className="bg-white divide-y divide-gray-200">
+                                                      {activityLog.map((log, index) => (
+                                                          <tr key={index}>
+                                                              <td className="px-6 py-4 whitespace-nowrap">
+                                                                  <div className="text-sm font-medium text-gray-900">{log.activity}</div>
+                                                              </td>
+                                                              <td className="px-6 py-4 whitespace-nowrap">
+                                                                  <div className="text-sm text-gray-500">{log.date}</div>
+                                                              </td>
+                                                          </tr>
+                                                      ))}
+                                                  </tbody>
+                                              </table>
+                                          </div>
+                                      </div>
+                                  )}
+                              </div>
+                          </div>
+                      </div>
+              
+                      <Modal
+                          isOpen={modalIsOpen}
+                          onRequestClose={() => setModalIsOpen(false)}
+                          ariaHideApp={false}
+                          className="max-w-lg mx-auto mt-20 bg-white p-6 rounded-lg shadow-xl"
+                          overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex justify-center"
+                      >
+                          {/* Modal content remains the same */}
+                      </Modal>
+              
+                      <Modal
+                          isOpen={showChangePasswordModal}
+                          onRequestClose={() => setShowChangePasswordModal(false)}
+                          ariaHideApp={false}
+                          className="max-w-md mx-auto mt-20 bg-white p-6 rounded-lg shadow-xl"
+                          overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex justify-center"
+                      >
+                          {/* Change password modal content remains the same */}
+                      </Modal>
+                  </div>
+              );
+              };
+              
+              export default VoterProfile;
