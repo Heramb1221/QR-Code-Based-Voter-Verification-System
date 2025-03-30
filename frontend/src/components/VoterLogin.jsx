@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { FiUser, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
-import { AuthContext } from "../context/authContext";
+import { AuthContext2 as AuthContext } from "../context/authVoter"; // Fixed import to use voter auth context
 
 const VoterLogin = () => {
   const navigate = useNavigate();
@@ -49,14 +49,16 @@ const VoterLogin = () => {
     }
 
     try {
+      console.log("Attempting login with:", { voterId: formData.voterId });
       const response = await fetch("http://127.0.0.1:5000/api/voters/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voterId: formData.voterId, password: formData.password }),
         credentials: "include",
       });
-      console.log(formData.voterId, formData.password)
 
+      console.log("Response status:", response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Invalid credentials");
@@ -65,10 +67,13 @@ const VoterLogin = () => {
       const data = await response.json();
       console.log("✅ Voter login successful:", data);
 
+      // Store important data in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("userType", "voter");
       localStorage.setItem("userName", data.voter.name);
+      localStorage.setItem("voterId", data.voter.voterId); // Added voterId to localStorage
 
+      // Pass data to the auth context
       login(data);
       navigate("/voter-dashboard");
     } catch (error) {

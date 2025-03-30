@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
-import { AuthContext } from "../context/authContext"; // Ensure the correct path to AuthContext
+import { AuthContext } from "../context/authAdmin"; // Ensure the correct path to AuthContext
 
 const AdminLogin = () => {
     const navigate = useNavigate();
