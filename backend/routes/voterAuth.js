@@ -192,4 +192,29 @@ router.get("/profile", async (req, res) => {
   }
 });
 
+router.put("/:voterId/vote", async (req, res) => {
+    try {
+      const { voterId } = req.params;
+      const voter = await Voter.findOneAndUpdate({ voterId }, { hasVoted: true }, { new: true });
+      if (!voter) return res.status(404).json({ message: "Voter not found" });
+      res.json({ message: "Voter marked as voted", voter });
+    } catch (error) {
+      console.error("Vote update error:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  });
+  
+  // Get Voter Profile by voterId
+  router.get("/:voterId", async (req, res) => {
+    try {
+      const { voterId } = req.params;
+      const voter = await Voter.findOne({ voterId }).select("-password");
+      if (!voter) return res.status(404).json({ message: "Voter not found" });
+      res.json(voter);
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  });
+
 module.exports = router;
