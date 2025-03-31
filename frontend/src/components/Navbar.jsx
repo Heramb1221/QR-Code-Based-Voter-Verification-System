@@ -1,4 +1,3 @@
-// frontend/src/components/NavBar.js
 import React, { useState, useEffect, useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {

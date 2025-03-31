@@ -6,9 +6,9 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     return {
-      folder: "voter_documents", // Folder name in Cloudinary
-      format: file.mimetype.split("/")[1], // Automatically set format
-      public_id: `${Date.now()}-${file.originalname}`, // Unique file name
+      folder: "voter_documents",
+      format: file.mimetype.split("/")[1],
+      public_id: `${Date.now()}-${file.originalname}`,
     };
   },
 });

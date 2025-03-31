@@ -2,11 +2,11 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
-import { AuthContext } from "../context/authAdmin"; // Ensure the correct path to AuthContext
+import { AuthContext } from "../context/authAdmin";
 
 const AdminLogin = () => {
     const navigate = useNavigate();
-    const { login } = useContext(AuthContext); // Auth context for global state management
+    const { login } = useContext(AuthContext);
 
     const [formData, setFormData] = useState({
         email: "",
@@ -18,33 +18,28 @@ const AdminLogin = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Handle input field changes
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null })); // Clear error when user types
+        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
     };
 
-    // Handle CAPTCHA verification
     const handleCaptcha = (value) => {
         setFormData((prev) => ({ ...prev, captchaVerified: !!value }));
-        if (errors.captcha) setErrors((prev) => ({ ...prev, captcha: null })); // Clear CAPTCHA error if solved
+        if (errors.captcha) setErrors((prev) => ({ ...prev, captcha: null }));
     };
-
-    // Handle login submission
+n
     const loginHandler = async (e) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
 
-        // Validate CAPTCHA
         if (!formData.captchaVerified) {
             setErrors((prev) => ({ ...prev, captcha: "Please complete the CAPTCHA" }));
             setLoading(false);
             return;
         }
 
-        // Validate empty fields
         if (!formData.email || !formData.password) {
             setErrors((prev) => ({
                 ...prev,
@@ -60,30 +55,27 @@ const AdminLogin = () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: formData.email, password: formData.password }),
-                credentials: "include", // ✅ Sends cookies/sessions
+                credentials: "include",
             });
 
             const data = await response.json();
             console.log("📢 Response Data:", data);
 
             if (response.ok) {
-                console.log("✅ Admin login successful, storing data & updating context...");
+                console.log("Admin login successful, storing data & updating context...");
 
-                // Store login data in localStorage
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("userType", data.role);
                 localStorage.setItem("userName", data.user.name);
 
-                // Update global auth context
                 login(data);
 
-                // Redirect to the admin dashboard
                 navigate("/admin-dashboard");
             } else {
                 setErrors({ general: data.message || "Invalid credentials" });
             }
         } catch (error) {
-            console.error("❌ Fetch error:", error);
+            console.error("Fetch error:", error);
             setErrors({ general: "Failed to connect to server" });
         } finally {
             setLoading(false);

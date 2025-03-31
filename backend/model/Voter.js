@@ -101,7 +101,6 @@ const VoterSchema = new mongoose.Schema(
     }
 );
 
-// Calculate age based on DOB
 VoterSchema.pre("save", function (next) {
     if (this.dob) {
         const today = new Date();

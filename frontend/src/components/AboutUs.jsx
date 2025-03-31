@@ -5,12 +5,7 @@ import {
     FaChartLine,
     FaUsers,
     FaLightbulb,
-    FaPaperPlane,
-    FaUniversity,
-    FaLock,
     FaQuestionCircle,
-    FaEnvelope,
-    FaPhone,
     FaCheckCircle
 } from 'react-icons/fa';
 

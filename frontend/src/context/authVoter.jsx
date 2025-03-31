@@ -1,7 +1,5 @@
-// frontend/src/context/authVoter.js
 import React, { createContext, useState, useEffect } from 'react';
 
-// Create a dedicated context for voter authentication
 export const AuthContext2 = createContext();
 
 export const VoterAuthProvider = ({ children }) => {
@@ -11,17 +9,15 @@ export const VoterAuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if voter is already logged in
+
         const storedToken = localStorage.getItem('token');
         const storedUserType = localStorage.getItem('userType');
 
-        // Only restore voter state if userType is explicitly 'voter'
         if (storedToken && storedUserType === 'voter') {
             console.log("Voter auth: Restoring login state from localStorage");
 
             setToken(storedToken);
 
-            // Reconstruct voter info from localStorage
             setVoterInfo({
                 name: localStorage.getItem('userName'),
                 voterId: localStorage.getItem('voterId')
@@ -39,24 +35,20 @@ export const VoterAuthProvider = ({ children }) => {
         try {
             console.log("Voter auth: Login called with data:", data);
 
-            // Validate the data
             if (!data || !data.token || !data.voter) {
                 console.error("Voter auth: Invalid login data");
                 throw new Error("Invalid login response");
             }
 
-            // Store voter information
             const voterData = {
                 name: data.voter.name || '',
                 voterId: data.voter.voterId || ''
             };
 
-            // Update state
             setToken(data.token);
             setVoterInfo(voterData);
             setIsLoggedIn(true);
 
-            // Store in localStorage
             localStorage.setItem('token', data.token);
             localStorage.setItem('userType', 'voter');
             localStorage.setItem('userName', data.voter.name || '');
@@ -73,13 +65,11 @@ export const VoterAuthProvider = ({ children }) => {
     const logout = () => {
         console.log("Voter auth: Logout called");
 
-        // Clear voter-specific localStorage items
         localStorage.removeItem('token');
         localStorage.removeItem('userType');
         localStorage.removeItem('userName');
         localStorage.removeItem('voterId');
 
-        // Clear state
         setToken(null);
         setVoterInfo(null);
         setIsLoggedIn(false);
@@ -87,7 +77,6 @@ export const VoterAuthProvider = ({ children }) => {
         console.log("Voter auth: Logout completed");
     };
 
-    // Create context value
     const value = {
         isLoggedIn,
         token,

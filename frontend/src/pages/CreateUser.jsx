@@ -28,13 +28,11 @@ const CreateUser = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Calculate Age
   const calculateAge = (dob) => {
     const birthDate = new Date(dob);
     const today = new Date();
@@ -48,7 +46,6 @@ const CreateUser = () => {
     return age;
   };
 
-  // Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -70,7 +67,7 @@ const CreateUser = () => {
 
       if (response.status === 201) {
         alert("User created successfully!");
-        navigate("/admin/dashboard");
+        navigate("/admin-dashboard");
       } else {
         throw new Error(response.data.message || "Failed to create user.");
       }
@@ -96,7 +93,7 @@ const CreateUser = () => {
         </select>
         <input type="text" name="fatherHusbandName" placeholder="Father/Husband Name" onChange={handleChange} required className="p-2 border" />
         <input type="text" name="voterId" placeholder="Voter ID" onChange={handleChange} required className="p-2 border" />
-        
+
         {/* Address Details */}
         <input type="text" name="houseNo" placeholder="House Number" onChange={handleChange} required className="p-2 border" />
         <input type="text" name="street" placeholder="Street" onChange={handleChange} required className="p-2 border" />
@@ -105,14 +102,14 @@ const CreateUser = () => {
         <input type="text" name="district" placeholder="District" onChange={handleChange} required className="p-2 border" />
         <input type="text" name="state" placeholder="State" onChange={handleChange} required className="p-2 border" />
         <input type="text" name="pinCode" placeholder="Pin Code" onChange={handleChange} required className="p-2 border" />
-        
+
         {/* Contact & Identity Details */}
         <input type="text" name="mobile" placeholder="Mobile Number" onChange={handleChange} required className="p-2 border" />
         <input type="email" name="email" placeholder="Email Address" onChange={handleChange} required className="p-2 border" />
         <input type="password" name="password" placeholder="Password" onChange={handleChange} required className="p-2 border" />
         <input type="text" name="aadharNumber" placeholder="Aadhar Number" onChange={handleChange} required className="p-2 border" />
         <input type="text" name="panCardNumber" placeholder="PAN Card Number" onChange={handleChange} required className="p-2 border" />
-        
+
         <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg" disabled={loading}>
           {loading ? "Creating..." : "Create User"}
         </button>

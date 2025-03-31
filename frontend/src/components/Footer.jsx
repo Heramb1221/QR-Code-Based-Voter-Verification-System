@@ -14,12 +14,12 @@ import {
     FaChartBar,
     FaInfoCircle,
     FaUserFriends,
-    FaLock // Import FaLock here
+    FaLock
 } from 'react-icons/fa';
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
-    const visitorCount = 123456; // Hardcoded dummy data
+    const visitorCount = 123456;
 
     const quickLinks = [
         { to: "/", text: "Home" },
@@ -160,7 +160,7 @@ const Footer = () => {
                                 </li>
                             ))}
                         </ul>
-                        <Link to="/contact-us" className="inline-block mt-4 bg-yellow-400 text-[#19567C] px-4 py-2 rounded font-medium hover:bg-yellow-300 transition">
+                        <Link to="/about-us" className="inline-block mt-4 bg-yellow-400 text-[#19567C] px-4 py-2 rounded font-medium hover:bg-yellow-300 transition">
                             Submit Inquiry
                         </Link>
                     </div>

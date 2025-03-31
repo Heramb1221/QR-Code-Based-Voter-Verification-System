@@ -13,18 +13,16 @@ const adminSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: "admin",
-        enum: ["admin"], // Ensures only "admin" role
+        enum: ["admin"],
     }
 }, { timestamps: true });
 
-// 🔹 Hash password before saving
 adminSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
     this.password = await bcrypt.hash(this.password, 10);
     next();
 });
 
-// 🔹 Method to compare passwords during login
 adminSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };

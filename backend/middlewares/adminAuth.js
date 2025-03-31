@@ -8,20 +8,17 @@ const adminAuth = (req, res, next) => {
   }
 
   try {
-    // If token is from the Authorization header, remove "Bearer "
     if (token.startsWith("Bearer ")) {
       token = token.replace("Bearer ", "");
     }
 
-    // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Ensure it's an admin token
+
     if (decoded.role !== "admin") {
       return res.status(403).json({ message: "Unauthorized. Admins only." });
     }
 
-    req.admin = decoded; // Attach admin details to request
+    req.admin = decoded;
     next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid or expired token." });

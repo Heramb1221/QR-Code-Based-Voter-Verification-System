@@ -14,6 +14,9 @@ import FindOfficerPage from './components/FindOfficerPage';
 import AboutUs from './components/AboutUs';
 import Footer from './components/Footer';
 import ScannerPage from './pages/ScannerPage';
+import ManageUsers from './components/ManageUsers';
+import ManageContent from './components/ManageContent';
+import Notification from './components/Notification';
 
 function App() {
     return (
@@ -24,12 +27,14 @@ function App() {
                     <Routes>
                         <Route path="/admin-login" element={<AdminLogin />} />
                         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                        <Route path="/admin/users" element={<ManageUsers/>} />
+                        <Route path="/admin/content" element={<ManageContent/>} />
+                        <Route path="/notifications" element={<Notification/>} />
                         <Route path="/create-user" element={<CreateUser />} />
                         <Route path="/voter-login" element={<VoterLogin />} />
                         <Route path="/voter-dashboard" element={<VoterDashboard />} />
                         <Route path="/voter-profile" element={<VoterProfile />} />
                         <Route path="/scanner" element={<ScannerPage />} />
-                        {/* Add any other routes here */}
                         <Route path="/" element={<Home/>} />
                         <Route path="/find-officers" element={<FindOfficerPage/>} />
                         <Route path="/about-us" element={<AboutUs />}/>

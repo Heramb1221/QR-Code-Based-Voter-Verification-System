@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
     const [userType, setUserType] = useState(null);
     const [token, setToken] = useState(null);
     const [userName, setUserName] = useState(null);
-    const [loading, setLoading] = useState(true); // Add loading state
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
             setUserName(storedUserName);
             setIsLoggedIn(true);
         }
-        setLoading(false); // Set loading to false after checking localStorage
+        setLoading(false);
     }, []);
 
     const login = (data) => {

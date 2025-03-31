@@ -3,7 +3,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { FiUser, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
-import { AuthContext2 } from "../context/authVoter"; // Correct import
+import { AuthContext2 } from "../context/authVoter";
 
 const VoterLogin = () => {
     const navigate = useNavigate();
@@ -66,13 +66,12 @@ const VoterLogin = () => {
             }
 
             const data = await response.json();
-            console.log("✅ Voter login successful:", data);
+            console.log("Voter login successful:", data);
 
-            // Call the login function from the context
             login(data);
             navigate("/voter-dashboard");
         } catch (error) {
-            console.error("❌ Fetch error:", error.message);
+            console.error("Fetch error:", error.message);
             setErrors({ general: error.message });
         } finally {
             setLoading(false);

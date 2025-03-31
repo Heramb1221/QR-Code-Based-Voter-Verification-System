@@ -1,4 +1,3 @@
-// frontend/src/components/VoterDashboard.jsx
 import React, { useContext, useEffect } from 'react';
 import { AuthContext2 } from '../context/authVoter';
 import { useNavigate } from 'react-router-dom';
@@ -15,11 +14,11 @@ const VoterDashboard = () => {
     }, [isLoggedIn, loading, navigate]);
 
     if (!isLoggedIn && !loading) {
-        return null; // Or a loading indicator if you have one
+        return null;
     }
 
     if (loading) {
-        return <div>Loading voter data...</div>; // Basic loading indicator
+        return <div>Loading voter data...</div>;
     }
 
     return (
@@ -46,7 +45,6 @@ const VoterDashboard = () => {
                     >
                         View Voter Card
                     </button>
-                    {/* You can add more simple information or actions here */}
                 </div>
             </div>
         </div>

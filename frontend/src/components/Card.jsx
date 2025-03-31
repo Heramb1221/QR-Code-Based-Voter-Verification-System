@@ -20,7 +20,6 @@ const VoterCard = () => {
                 const token = localStorage.getItem("token");
                 if (!token) throw new Error("No authentication token found");
 
-                // Log token for debugging (remove in production)
                 console.log("Using token:", token.substring(0, 10) + "...");
 
                 const response = await fetch("http://127.0.0.1:5000/api/voters/profile", {
@@ -41,13 +40,11 @@ const VoterCard = () => {
                 const data = await response.json();
                 console.log("Voter data received:", data);
 
-                // Check which property has the voter data
                 setVoterData(data.voter || data);
             } catch (error) {
                 console.error("Error fetching voter data:", error);
                 setError(error.message);
 
-                // Use mock data as fallback
                 const mockVoterData = {
                     fullName: localStorage.getItem("userName") || "John Doe",
                     voterId: localStorage.getItem("voterId") || "AASBMDAAD",
@@ -59,7 +56,6 @@ const VoterCard = () => {
                 console.log("Using mock data:", mockVoterData);
                 setVoterData(mockVoterData);
 
-                // Show toast for debugging
                 toast.warning("Using sample data - connection to server failed");
             } finally {
                 setLoading(false);
@@ -74,32 +70,26 @@ const VoterCard = () => {
         setIsPrinting(true);
 
         try {
-            // Get the QR code SVG from our rendered component
             const qrCodeSvg = document.querySelector('.qr-code-container svg');
             if (!qrCodeSvg) {
                 throw new Error("QR Code element not found");
             }
 
-            // Convert SVG to data URL for embedding
             const svgData = new XMLSerializer().serializeToString(qrCodeSvg);
             const qrCodeDataUrl = `data:image/svg+xml;base64,${btoa(svgData)}`;
 
-            // Create a new iframe
             const printIframe = document.createElement('iframe');
             printIframe.style.display = 'none';
             document.body.appendChild(printIframe);
 
-            // Get the iframe document and open it
             const printDocument = printIframe.contentDocument || printIframe.contentWindow.document;
             printDocument.open();
 
-            // Prepare voter data for display
             const formattedDob = voterData.dob ? new Date(voterData.dob).toLocaleDateString("en-GB") : "N/A";
             const verificationUrl = voterData.voterId
                 ? `${window.location.origin}/verify/${voterData.voterId}`
                 : `${window.location.origin}/verify/unknown`;
 
-            // Write the HTML content directly to the iframe
             printDocument.write(`
                 <!DOCTYPE html>
                 <html>
@@ -250,13 +240,11 @@ const VoterCard = () => {
 
             printDocument.close();
 
-            // Add event listener for after print
             printIframe.onload = function() {
                 setTimeout(() => {
                     printIframe.contentWindow.focus();
                     printIframe.contentWindow.print();
 
-                    // Clean up after printing
                     setTimeout(() => {
                         document.body.removeChild(printIframe);
                         setIsPrinting(false);
@@ -281,7 +269,7 @@ const VoterCard = () => {
     return (
         <div className="flex flex-col items-center p-4">
             <div
-                className="w-[450px] h-[650px] p-6 rounded-lg shadow-xl border-4 border-gray-400 bg-gray-100 relative"
+                className="w-[450px] h-[675px] p-6 rounded-lg shadow-xl border-4 border-gray-400 bg-gray-100 relative"
             >
                 <div className="flex justify-between items-center border-b-2 border-gray-500 pb-3 mb-3">
                     <img src={ECI} alt="ECI Logo" className="h-12" />
@@ -330,11 +318,11 @@ const VoterCard = () => {
                     {voterData.voterId && <QRCode value={voterData.voterId} size={100} />}
                 </div>
 
-                <div className="bg-gray-400 h-8 rounded-md mt-3 mx-auto w-2/3"></div>
-
-                <div className="absolute bottom-4 text-center w-full text-sm text-gray-600">
+                <div className="relative mt-5 bottom-4 text-center w-full text-sm text-gray-600">
                     निर्वाचन आयोग द्वारा प्रमाणित (Certified by Election Commission)
                 </div>
+
+                <div className="bg-gray-400 h-8 rounded-md mx-auto w-2/3"></div>
             </div>
 
             <button
