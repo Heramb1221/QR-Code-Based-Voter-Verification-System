@@ -108,7 +108,7 @@ const VoterCard = () => {
                         }
                         .card {
                             width: 450px;
-                            height: 650px;
+                            height: 460px;
                             padding: 24px;
                             border: 4px solid #a0a0a0;
                             border-radius: 8px;
@@ -211,10 +211,11 @@ const VoterCard = () => {
                             <img src="${IF}" alt="India Flag" />
                         </div>
 
-                        <div class="photo-container">
-                            <img class="photo" src="${voterData.photoUrl || Us}" alt="User Photo"
+                        ${<div class="photo-container">
+                             <img class="photo" src="${voterData.photoUrl || Us}" alt="User Photo"
                                  onerror="this.onerror=null; this.src='${Us}';" />
-                        </div>
+                            </div>
+                        }
 
                         <div class="details">
                             <p><strong>निर्वाचक का नाम (Elector's Name):</strong> ${voterData.fullName || "N/A"}</p>
@@ -269,7 +270,7 @@ const VoterCard = () => {
     return (
         <div className="flex flex-col items-center p-4">
             <div
-                className="w-[450px] h-[675px] p-6 rounded-lg shadow-xl border-4 border-gray-400 bg-gray-100 relative"
+                className="w-[450px] h-[560px] p-6 rounded-lg shadow-xl border-4 border-gray-400 bg-gray-100 relative"
             >
                 <div className="flex justify-between items-center border-b-2 border-gray-500 pb-3 mb-3">
                     <img src={ECI} alt="ECI Logo" className="h-12" />
@@ -284,12 +285,12 @@ const VoterCard = () => {
                 </div>
 
                 <div className="flex justify-center mb-4">
-                    <img
+                    {/* <img
                         src={voterData.photoUrl ? voterData.photoUrl : Us}
                         alt="User"
                         className="w-32 h-32 rounded-lg border-4 border-gray-500 object-cover"
                         onError={(e) => { e.target.onerror = null; e.target.src=Us }}
-                    />
+                    /> */}
                 </div>
 
                 <div className="text-md text-gray-800 space-y-2">
