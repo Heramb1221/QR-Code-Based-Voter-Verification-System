@@ -28,7 +28,7 @@ const AdminLogin = () => {
         setFormData((prev) => ({ ...prev, captchaVerified: !!value }));
         if (errors.captcha) setErrors((prev) => ({ ...prev, captcha: null }));
     };
-n
+
     const loginHandler = async (e) => {
         e.preventDefault();
         setLoading(true);
